@@ -11,6 +11,7 @@ restart:
 
 clean:
 	docker compose down -v --remove-orphans
+	docker image prune -a -f
 
 logs:
 	docker compose logs -f
