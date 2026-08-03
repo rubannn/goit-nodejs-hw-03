@@ -2,10 +2,13 @@ import { Router } from "express";
 
 import * as authController from "../controllers/auth.controller.ts";
 import { authenticate } from "../middleware/authenticate.ts";
+import { authRateLimiter } from "../middleware/rateLimit.ts";
 import { validateBody } from "../middleware/validate.ts";
 import { loginSchema, refreshSchema, registerSchema } from "../validators/auth.validator.ts";
 
 const router = Router();
+
+router.use(authRateLimiter);
 
 router.post("/register", validateBody(registerSchema), authController.register);
 router.post("/login", validateBody(loginSchema), authController.login);
