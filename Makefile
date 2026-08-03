@@ -1,10 +1,13 @@
-.PHONY: build up restart clean logs
+.PHONY: build up stop restart clean logs
 
 build:
 	docker compose build
 
 up:
 	docker compose up -d
+
+stop:
+	docker compose stop
 
 restart:
 	docker compose restart

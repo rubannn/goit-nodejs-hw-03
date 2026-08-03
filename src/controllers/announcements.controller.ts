@@ -1,6 +1,7 @@
 import type { Request, Response } from "express";
 
 import prisma from "../../prisma/client.ts";
+import logger from "../logger.ts";
 
 const PER_PAGE = 10;
 
@@ -65,6 +66,8 @@ export async function create(req: Request, res: Response) {
     data: { title, description, price, category, userId: req.user!.sub },
     include: { user: { select: AUTHOR_SELECT } },
   });
+
+  logger.info({ announcementId: announcement.id, userId: req.user!.sub }, "Announcement created");
 
   res.status(201).json(announcement);
 }

@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 
 import prisma from "../../prisma/client.ts";
+import logger from "../logger.ts";
 import type { AuthTokenPayload } from "../middleware/authenticate.ts";
 
 const SALT_ROUNDS = 10;
@@ -58,6 +59,8 @@ export async function register(req: Request, res: Response) {
     data: { token: refreshToken, userId: user.id },
   });
 
+  logger.info({ userId: user.id, username: user.username }, "User registered");
+
   res.status(201).json({
     user: toPublicUser(user),
     accessToken,
@@ -80,6 +83,8 @@ export async function login(req: Request, res: Response) {
   await prisma.refreshToken.create({
     data: { token: refreshToken, userId: user.id },
   });
+
+  logger.info({ userId: user.id, username: user.username }, "User logged in");
 
   res.status(200).json({
     user: toPublicUser(user),
