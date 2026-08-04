@@ -55,9 +55,20 @@ const announcementResponseSchema = z.object({
   description: z.string(),
   price: z.number(),
   category: z.enum(["sale", "service", "job", "other"]),
+  imageUrl: z.string().nullable(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
   user: userResponseSchema,
+});
+
+const photoFieldSchema = z.string().openapi({ type: "string", format: "binary" });
+
+const createAnnouncementMultipartSchema = createAnnouncementSchema.extend({
+  photo: photoFieldSchema.optional(),
+});
+
+const updateAnnouncementMultipartSchema = updateAnnouncementSchema.extend({
+  photo: photoFieldSchema.optional(),
 });
 
 const announcementListResponseSchema = z.object({
@@ -180,9 +191,15 @@ registry.registerPath({
   path: "/announcements",
   tags: ["Announcements"],
   summary: "Create an announcement",
+  description: "Accepts either application/json (no photo) or multipart/form-data with an optional 'photo' file.",
   security: bearerAuth,
   request: {
-    body: { content: { "application/json": { schema: createAnnouncementSchema } } },
+    body: {
+      content: {
+        "application/json": { schema: createAnnouncementSchema },
+        "multipart/form-data": { schema: createAnnouncementMultipartSchema },
+      },
+    },
   },
   responses: {
     201: { description: "Created", content: { "application/json": { schema: announcementResponseSchema } } },
@@ -196,10 +213,17 @@ registry.registerPath({
   path: "/announcements/{id}",
   tags: ["Announcements"],
   summary: "Partially update an announcement (owner only)",
+  description:
+    "Accepts either application/json (no photo) or multipart/form-data with an optional 'photo' file. At least one field or a photo must be provided.",
   security: bearerAuth,
   request: {
     params: announcementIdParamSchema,
-    body: { content: { "application/json": { schema: updateAnnouncementSchema } } },
+    body: {
+      content: {
+        "application/json": { schema: updateAnnouncementSchema },
+        "multipart/form-data": { schema: updateAnnouncementMultipartSchema },
+      },
+    },
   },
   responses: {
     200: { description: "OK", content: { "application/json": { schema: announcementResponseSchema } } },

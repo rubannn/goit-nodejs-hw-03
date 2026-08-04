@@ -1,6 +1,8 @@
+import fs from "node:fs/promises";
 import type { Request, Response } from "express";
 
 import prisma from "../../prisma/client.ts";
+import cloudinary from "../cloudinary.ts";
 import logger from "../logger.ts";
 
 const PER_PAGE = 10;
@@ -11,6 +13,18 @@ const AUTHOR_SELECT = {
   email: true,
   name: true,
 } as const;
+
+async function uploadPhoto(file: Express.Multer.File) {
+  try {
+    const result = await cloudinary.uploader.upload(file.path, { folder: "announcements" });
+
+    logger.info({ imageUrl: result.secure_url }, "Photo uploaded to Cloudinary");
+
+    return result.secure_url;
+  } finally {
+    await fs.unlink(file.path);
+  }
+}
 
 export async function list(req: Request, res: Response) {
   const { search, sort, page } = req.query as unknown as {
@@ -62,8 +76,10 @@ export async function getById(req: Request, res: Response) {
 export async function create(req: Request, res: Response) {
   const { title, description, price, category } = req.body;
 
+  const imageUrl = req.file ? await uploadPhoto(req.file) : undefined;
+
   const announcement = await prisma.announcement.create({
-    data: { title, description, price, category, userId: req.user!.sub },
+    data: { title, description, price, category, imageUrl, userId: req.user!.sub },
     include: { user: { select: AUTHOR_SELECT } },
   });
 
@@ -85,9 +101,15 @@ export async function update(req: Request, res: Response) {
     return res.status(403).json({ error: "Access denied" });
   }
 
+  if (Object.keys(req.body).length === 0 && !req.file) {
+    return res.status(400).json({ error: "At least one field must be provided" });
+  }
+
+  const imageUrl = req.file ? await uploadPhoto(req.file) : undefined;
+
   const updated = await prisma.announcement.update({
     where: { id },
-    data: req.body,
+    data: { ...req.body, ...(imageUrl ? { imageUrl } : {}) },
     include: { user: { select: AUTHOR_SELECT } },
   });
 

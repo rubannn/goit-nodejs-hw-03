@@ -1,11 +1,21 @@
+import fs from "node:fs/promises";
 import type { NextFunction, Request, Response } from "express";
 import type { ZodType } from "zod";
+
+// If multer already saved an uploaded file to disk before validation ran,
+// a rejected request must not leave that temp file orphaned in uploads/.
+function cleanupUploadedFile(req: Request) {
+  if (req.file) {
+    void fs.unlink(req.file.path).catch(() => {});
+  }
+}
 
 export function validateBody<T>(schema: ZodType<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
     const result = schema.safeParse(req.body);
 
     if (!result.success) {
+      cleanupUploadedFile(req);
       return res.status(400).json({ error: "Validation failed", details: result.error.flatten() });
     }
 
@@ -19,6 +29,7 @@ export function validateParams<T>(schema: ZodType<T>) {
     const result = schema.safeParse(req.params);
 
     if (!result.success) {
+      cleanupUploadedFile(req);
       return res.status(400).json({ error: "Validation failed", details: result.error.flatten() });
     }
 

@@ -15,18 +15,13 @@ export const listAnnouncementsQuerySchema = z.object({
 export const createAnnouncementSchema = z.object({
   title: z.string().min(5).max(50),
   description: z.string().min(10),
-  price: z.number().positive(),
+  price: z.coerce.number().positive(),
   category: z.enum(CATEGORIES),
 });
 
-const updateAnnouncementObjectSchema = z.object({
+export const updateAnnouncementSchema = z.object({
   title: z.string().min(5).max(50).optional(),
   description: z.string().min(10).optional(),
-  price: z.number().positive().optional(),
+  price: z.coerce.number().positive().optional(),
   category: z.enum(CATEGORIES).optional(),
 });
-
-export const updateAnnouncementSchema = updateAnnouncementObjectSchema.refine(
-  (data: z.infer<typeof updateAnnouncementObjectSchema>) => Object.keys(data).length > 0,
-  { message: "At least one field must be provided" },
-);
