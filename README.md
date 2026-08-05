@@ -179,7 +179,7 @@ PATCH використовує ті ж правила валідації, але
 ## Структура проекту
 
 ```
-goit-nodejs-hw-02/
+goit-nodejs-hw-03/
 ├── prisma/
 │   ├── schema.prisma
 │   ├── client.ts
