@@ -26,6 +26,23 @@ async function uploadPhoto(file: Express.Multer.File) {
   }
 }
 
+// Announcement.imageUrl only stores the Cloudinary URL (per spec), so the
+// public_id needed to delete the asset has to be recovered from that URL.
+function extractPublicId(imageUrl: string): string {
+  const afterUpload = imageUrl.split("/upload/")[1] ?? "";
+  const withoutVersion = afterUpload.replace(/^v\d+\//, "");
+
+  return withoutVersion.replace(/\.[^./]+$/, "");
+}
+
+async function deleteCloudinaryPhoto(imageUrl: string) {
+  try {
+    await cloudinary.uploader.destroy(extractPublicId(imageUrl));
+  } catch (err) {
+    logger.error({ err, imageUrl }, "Failed to delete photo from Cloudinary");
+  }
+}
+
 export async function list(req: Request, res: Response) {
   const { search, sort, page } = req.query as unknown as {
     search?: string;
@@ -113,6 +130,10 @@ export async function update(req: Request, res: Response) {
     include: { user: { select: AUTHOR_SELECT } },
   });
 
+  if (imageUrl && announcement.imageUrl) {
+    await deleteCloudinaryPhoto(announcement.imageUrl);
+  }
+
   res.status(200).json(updated);
 }
 
@@ -130,6 +151,10 @@ export async function remove(req: Request, res: Response) {
   }
 
   await prisma.announcement.delete({ where: { id } });
+
+  if (announcement.imageUrl) {
+    await deleteCloudinaryPhoto(announcement.imageUrl);
+  }
 
   res.status(204).end();
 }
