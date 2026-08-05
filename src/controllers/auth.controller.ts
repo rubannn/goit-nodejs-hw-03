@@ -14,7 +14,7 @@ interface TokenPair {
   refreshToken: string;
 }
 
-function generateTokenPair(userId: number): TokenPair {
+export function generateTokenPair(userId: number): TokenPair {
   const secret = process.env.JWT_SECRET!;
 
   const accessToken = jwt.sign({ sub: userId, type: "access", jti: crypto.randomUUID() }, secret, {
